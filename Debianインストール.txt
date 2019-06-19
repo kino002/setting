@@ -1,0 +1,200 @@
+・sudoを追加
+        1.「su -」でスーパーユーザーになる。
+        2.「apt -y install sudo」でインストール。
+        3.「nano /etc/sudoers」のファイルを開く
+        4.ファイルの最後に「[ユーザー名] ALL=(ALL:ALL) ALL」を追加する。
+
+
+・Debianインストールディスクの要求回避
+	1.「sudo nano /etc/apt/sources.list」でファイルを開く
+	2.２行目の「deb cdrom:[Debian GNU/Linux x.x.x _Stretch_ - Official amd64 DVD Binary-1 xxxxxxxxxxx]/ stretch contrib main」
+	  をコメントアウトする（#を先頭につける）
+
+
+・Guest Additionsをインストール(VirtualBoxの場合のみ)
+	1.「デバイス」から「Guest Additions CDイメージの挿入」を選択
+	2.「実行」するか聞かれたら、キャンセル
+	3.「sudo bash /media/cdrom/VBoxLinuxAdditions.run」を実行 
+	4.「sudo reboot」で再起動する
+	5.再起動後、デスクトップで右クリックし、画面の大きさを設定する
+
+
+・画面解像度設定
+	1.画面設定を取得「cvt 1920 1080」
+	2.cvtの出力結果をxrandrのニューモードとして設定「xrandr --newmode "1920x1080_60.00" 173.00  1920 2048 2248 2576  1080 1083 1088 1120 -hsync +vsync」
+	3.xrandrに1920x1080モードを追加「xrandr --addmode Virtual1 1920x1080_60.00」
+	4.画面設定を毎回読み込めるようにする「sudo nano /etc/profile.d/xrandr_1920x1080.sh」に
+	  #!/bin/bash
+	  xrandr --newmode "1920x1080_60.00" 173.00  1920 2048 2248 2576  1080 1083 1088 1120 -hsync +vsync
+	  xrandr --addmode Virtual1 1920x1080_60.00
+	  を入力し保存
+	5.解像度設定「xrandr --output Virtual1 --mode 1920x1080_60.00」
+	  （一回設定しておけば、再起動後も解像度が維持される）
+
+
+・Chromeをインストール
+	1.ブラウザでChromeをダウンロードする
+	2.ダウンロードした場所に移動し、「sudo dpkg -i google-chrome-stable_current_amd64.deb」
+	3.エラーがでたら、「sudo apt --fix-broken install」を実行し、
+	  もう一度、「sudo dpkg -i google-chrome-stable_current_amd64.deb」を実行
+	4.chromeの設定後、このままだと毎回、ルートパスワードを要求されるので、ユーティリティー内の
+	  「パスワードと鍵」で、「ログイン」上で右クリックし、パスワードの変更で、パスワードを入力しないで
+	  blankに設定する。
+	
+
+・Fritzingをインストール
+	1.sudo apt -y install fritzing fritzing-parts
+
+
+・ifconfigが使えるようにする
+	1.sudo apt -y install net-tools
+	2.実行するには、「sudo ifconfig」
+
+
+・LAMPのインストール
+
+・apache2のインストール
+	1.sudo apt -y install apache2
+	2.apache2設定
+	  ・「sudo nano /etc/apache2/conf-enabled/security.conf」ファイルの25行目
+	    ServerTokens Prod
+	    に書き換え
+	
+	　・「sudo nano /etc/apache2/mods-enabled/dir.conf」ファイルの２行目
+	　  DirectoryIndex index.html index.htm
+	　  に書き換え
+	
+	3.ブラウザから「127.0.0.1」でアクセスして表示されるか確認
+
+
+・PHPのインストール
+	1.sudo apt -y install php php-cgi libapache2-mod-php php-common php-pear php-mbstring
+	2.apache2設定
+	  ・sudo a2enconf php7.0-cgi
+
+	  ・「sudo nano /etc/php/7.0/apache2/php.ini」ファイルの924行目コメント解除し、
+	    date.timezone = "Asia/Tokyo"
+	    に書き換え
+
+	  ・sudo systemctl restart apache2
+
+	3.PHPテストページを作って確認
+	  ・sudo nano /var/www/html/index.php
+
+		<html>
+		<body>
+		<?php
+			print 'Hello PHP!!!';
+		?>
+		</body>
+		</html>
+
+	  ・ブラウザで、「127.0.0.1/index.php」が表示されるか確認
+
+
+・pythonのインストール
+	1.sudo apt -y install python3（たぶんインストールされているので、実行しなくて良い）
+	2.apache2設定
+	  ・sudo a2enmod cgi
+	  ・sudo systemctl restart apache2
+
+	  ・cgi実行可能ディレクトリを作る（拡張子cgiおよびpyをCGIとして扱う）
+	    ・「sudo nano /etc/apache2/conf-available/cgi-enabled.conf」ファイルに、
+	     
+		<Directory "/var/www/html/cgi-enabled">
+			Options +ExecCGI
+			AddHandler cgi-script .cgi .py
+		</Directory>
+
+		を書き込んで新規作成する
+
+	　　・sudo mkdir /var/www/html/cgi-enabled
+	    ・sudo a2enconf cgi-enabled
+	    ・sudo systemctl restart apache2
+
+	3.CGIテストページを作って動作確認
+	  ・sudo nano /var/www/html/cgi-enabled/index.py
+
+		#!/usr/bin/env python
+
+		print "Content-type: text/html\n\n"
+		print "<html>\n<body>"
+		print "<p>Hello Python</p>"
+		print "</body>\n</html>"
+
+	  ・sudo chmod 705 /var/www/html/cgi-enabled/index.py
+
+	  ・ブラウザで「127.0.0.1/cgi-enabled/index.py」を確認
+
+
+・mariaDBインストール
+	1.sudo apt -y install mariadb-server
+	2.「sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf」ファイルの、111,112行目
+
+		character-set-server = utf8
+		#collation-server = utf8mb4_general_ci
+
+	  に書き換え
+
+	3.sudo systemctl restart mariadb
+	4.初期設定
+
+	  sudo mysql_secure_installation
+
+	  enter
+	  y
+	  ルートパスワードの設定
+	  y
+	  y
+	  y
+	  y
+
+	5.rootユーザーで接続できるか確認
+	
+	  sudo mysql -u root -p
+	  (抜けるのはexit）
+
+
+・phpadminをインストール
+	1.sudo apt -y install phpmyadmin php-mbstring php-gettext
+	2.[apache2]にチェック（スペースキー）を入れて<ok>
+	3.「いいえ」を選択
+	4.phpMyadminにrootログインできるように設定変更
+		・sudo mysql -u root -p mysql
+			・[mysql]> update user set plugin='' where user='root';
+			・[mysql]> flush privileges;
+			・[mysql]> exit
+
+		・「sudo nano /etc/phpmyadmin/apache.conf」ファイル８行目あたりに
+
+			Require ip 127.0.0.1 10.0.0.0/24 192.168.10.0/24(家のネットワーク内からアクセスできるように)
+
+		  を書き込む
+
+		・sudo systemctl restart apache2
+
+	5.ブラウザで「127.0.0.1/phpmyadmin/」にログインできるか確認
+
+
+・gitのインストール
+	1.sudo apt -y install git
+	2.git config --global user.name "名前"
+	3.git config --global user.email "メールアドレス"
+	4.git config --global core.quotepath off
+	  (日本語を含んだファイル名を正しく表示されるようにする)
+
+
+・Vscodeをインストール
+        1.ブラウザでvscodeをダウンロードする
+        2.ダウンロードした場所に移動し、「sudo dpkg -i code_x.xx.x-xxxxxxxxxxx_amd64.deb」
+
+
+・Filezillaをインストール
+	1.sudo apt -y install filezilla
+	2.「ファイル」→「サイトマネージャ」
+	3.ホストのIPアドレス: 192.168.10.x
+	  プロトコル: SFTP-SSH File Transfer Protocol
+	  ログオンの種類: 通常
+	  ユーザ: pi
+	  パスワード:raspberry
+	4.注意: ホスト側でSSHができるようにしていないと、SFTPは使えない。

@@ -1,0 +1,226 @@
+1.Apache2のインストール
+
+	1.$ sudo apt -y install apache2
+
+	2.apache2の設定
+
+		1.$ sudo nano /etc/apache2/conf-enabled/security.conf
+
+			ファイルの25行目
+
+				ServerTokens Prod
+
+				(ResponHeader に含まれるサーバの情報を最小限にする)
+
+			に書き換え
+
+		2.$ sudo nano /etc/apache2/mods-enabled/dir.conf
+
+			ファイルの2行目
+
+				DirectoryIndex index.html index.htm
+
+				(ファイル名を省略し、ディレクトリ名だけで表示できるファイル名を指定)
+
+			に書き換え
+
+		3.ブラウザからサーバーのIPアドレスにアクセスして、
+		　表示されるか確認
+
+
+2.PHPのインストール
+
+		1.$ sudo apt -y install php php-cgi libapache2-mod-php php-common php-pear php-mbstring
+
+		2.Apache2の設定
+
+			1.$ sudo a2enconf php7.0-cgi
+
+			2.$ sudo nano /etcc/php/7.0/apache2/php.ini
+
+				ファイルの924行目をコメント外して、
+
+					date.timezone = "Asis/Tokyo"
+
+				書き換え
+
+			3.$ sudo systemctl restart apache2
+
+		3.PHPのテストページを作って確認
+
+			1.$ sudo nano /var/www/html/index.php
+
+				・index.php
+
+					<html>
+					<body>
+					<?php
+						print 'Hello PHP';
+					?>
+					</body>
+					</html>
+
+			2.ブラウザからサーバーのIPアドレス/index.phpにアクセスして、
+                　	　表示されるか確認
+
+
+3.Pythonのインストール
+
+	1.$ sudo apt -y install python3
+
+	2.$apache2の設定
+
+		1.$ sudo a2enmod cgi
+
+		2.$ sudo systemctl restart apache2
+
+		3.$ sudo nano /etc/apache2/apache2.conf
+
+			ファイルの171行目を
+
+			<Directory /var/www/>
+				Require all granted
+				Options ExecCGI
+				AllowOverride All
+				AddHandler cgi-script .cgi .py
+			</Directory>
+
+		4.$ sudo systemctl restart apache2
+
+		5.CGIテストページを作って動作確認
+
+			1.$ sudo nano /var/www/html/index.py
+
+			    index.py
+				
+				#!/usr/bin/env python3
+
+				print ("Content-type: text/html\n\n"
+				print ("<html>\n<body>\n")
+				print ("<p>Hello Python</p>")
+				print ("</body>\n</html>")
+
+			2.$ sudo chmod 705 /var/www/html/index.py
+
+			3.ブラウザからサーバーのIPアドレス/index.pyにアクセス $
+                　      　表示されるか確認
+
+			 
+4.MariaDBインストール
+
+	1.$ sudo apt -y install mariadb-server
+
+	2.$ sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+
+		ファイルの111,112行目
+
+			character-set-server = utf8
+			#collation-server = utf8mb4_general ci
+
+		書き換え
+
+	3.$ sudo systemctl restart mariadb
+
+	4.初期設定
+
+		$ sudo mysql_secure installation
+
+		Enter ⇒ y ⇒ rootパスワードの設定 ⇒ y 4回
+
+	5.rootユーザーで接続できるか確認
+
+		$ sudo mysql -u root -p
+		 (抜けるのはexit)
+
+5.PhpMyadminをインストール
+
+	1.$ sudo apt -y install phpmyadmin php-mbstring php-gettext
+
+		[apach2]にチェック（スペースキー）をいれて<OK>
+
+		[いいえ]を選択
+
+	2.phpMyadminにrootログインできるように設定変更
+
+		1.$sudo mysql -u root -p mysql
+
+			[mysql]>update user set plugin='' where user='root';
+			[mysql]>flush privileges;
+			[mysql]>exit
+
+		2.$ sudo nano /etc/phpmyadmin/apache.conf
+
+			ファイルの8行目に
+
+				Require ip 127.0.0.1 10.0,0,24 192.168.10.0/24
+
+			を書き込む
+
+		5.ブラウザで、IPアドレス/phpmyadmin/ にログインできるか確認
+
+
+6.Postfixのインストール(Gmailをリレーする)
+
+	1.$ sudo apt install postfix bsd-mailx libsasl2-modules
+
+		いくつかの選択をする
+
+			1.<了解>
+
+			2.スマートホスト付きインターネット　を選択し、<了解>
+
+			3.システムメール名はそのままEnter
+
+			4.SMTP リレーホスト
+
+				[smtp.gmail.com]:587
+
+			 を設定し、<了解>
+
+			
+			※　失敗しpostfixを再設定したい場合は、
+
+				$ sudo dpkg-reconfigure postfix
+
+
+	2.Gmailにリレーするための設定
+
+		1.$ sudo nano /etc/postfix/sasl_passwd を作成し、
+
+			[smtp.gmail.com]:587 <username>@gmail.com:<password>
+
+		 を記入し保存
+
+
+		2.$ sudo chmod 600 /etc/postfix/sasl_passwd
+
+
+		3.$ sudo postmap /etc/postfix/sasl_passwd
+
+
+		4.$ sudo nano /etc/postfix/main.cf の末尾に、
+
+			smtp_use_tls = yes
+			smtp_sasl_auth_enable = yes
+			smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+			smtp_sasl_tls_security_options = noanonymous
+
+		 を追記し、保存
+
+	3.Gmailのセキュリティ設定変更
+
+		1.ブラウザでGmailアカウントログイン後
+
+		　https://myaccount.google.com/security
+
+		　にアクセスして
+
+		  安全性の低いアプリの許可
+
+		  を有効にする
+		
+	4.設定の反映とテスト
+
+		1.$ sudo systemctl restart postfix.service
+
+		2.$ echo "Test message" | mail メールアドレス

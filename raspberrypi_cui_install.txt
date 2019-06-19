@@ -1,0 +1,183 @@
+ラズベリーパイ（CUIサーバー)設定 2019.6.10
+
+1.インストールと初期設定
+	1.Raspbian Liteをインストール
+
+	2.再起動後、piでログインする
+
+		$ raspberrypi login: pi
+		$ password: raspberry
+	
+	3.アップデート、アップグレードする
+
+		$ sudo apt update
+		$ sudo apt upgrade
+
+	4.日本語対応ターミナルをインストール（文字化け対策）
+
+		$ sudo apt install jfbterm
+
+	5.日本語表示を起動させる（sshでオンライン接続しない場合は、起動させること）
+
+		$ jfbterm
+
+		*日本語入力は、今の所情報がないので、ssh接続の端末で入力すること 2019.6.10
+
+	6.sshの設定
+
+		1.$sudo raspi-config
+
+		2.5.Interfacing Options でEnterキー
+
+		3.P2 SSH でEnterキー
+
+		4.<はい>でEnterキー
+
+		5.<了解>でEnterキー
+
+		*sshでWARNINGがでてログインできないときは、
+
+		$ ssh-keygen -R IPアドレス
+
+		で、$HOME/ .ssh/known_hostsファイルからホスト鍵を
+		削除する。
+		
+
+	7.Timeゾーンを変更
+
+		1.$sudo raspi-config
+
+		2.4.Localisation Options でEnterキー
+
+		3.I2 Change Timezone でEnterキー
+
+		4.アジア　を選んでEnterキー
+
+		5.東京　を選んでEnterキー
+
+	8.マシンホスト名変更
+
+		1./etc/hostname と /etc/hosts の「raspberrypi」を
+		 任意のホスト名に変更
+
+	9.再起動
+
+		$ sudo reboot
+
+
+2.ラズパイセキュリティ対策
+	1.ラズパイを最新版にする
+
+		$ sudo rpi-update
+		$ sudo reboot
+
+
+	2.rootのパスワードを設定する
+
+		$ sudo passwd root
+
+
+	3.新しいユーザーを追加する
+
+		1.$ sudo adduser 新しいユーザー名
+
+		2.$ groups pi
+			 (piユーザーと同じ権限しするため、piユーザーのグループ確認)
+
+		3.$ sudo usermod -G pi,adm,dialout,cdrom,sudo,audio,video,plugdev,games,users,input,netdev,spi,i2c,gpio 新しいユーザー名
+			 (新しいユーザーにgroupを追加、グループにはgroups piで表示されたグループを指定)
+
+		4.$ groups 新しいユーザー
+			 (groupが追加されたことを確認)
+		
+		5.$ sudo cp -r /home/pi/* /home/新しいユーザー名
+			 (piユーザーのファイルを、新規ユーザーにコピー
+
+		6.$ sudo nano /etc/lightdm/lightdm.conf (オートログイン設定していなければ、不要)
+			(piユーザーのオートログインを無効化)
+
+			#autologin-user=pi にコメントアウトする
+
+		7.$ sudo nano /etc/systemd/system/autologin@.service (オートログイン設定していなければ、不要)
+			(新しいユーザー目を指定)
+
+			ExecStart=-/sbin/agetty --autologin pi --noclear %I $TERM　を、
+
+			ExecStart=-/sbin/agetty --autologin [新しいユーザー名] --noclear %I $TERM
+
+			に、書き換え
+
+		8.sudo reboot
+
+
+		9.$ ssh 新しいユーザー名@IPアドレス
+			(新しいユーザーでログインできるか、確認)
+
+		10.$ ls -la
+			(新しいユーザーでログイン後、ファイルがコピーされているか確認)
+
+		11.$ who
+			(オートログインの確認、piユーザーがいなければOK)
+
+
+
+	4.piユーザーを削除する
+		
+		1.$ sudo userdel -r pi
+			(piユーザーを削除)
+
+		2.$ sudo gpasswd -d 新しいユーザー名 いらないグループ名
+                        (余計なグループ(例えばpiなど)が追加されている場合は、削除する)
+
+		3.$ id -a pi
+			(削除できかた確認
+			 id: pi no such user
+			と表示されたらOK)
+
+
+	5.SSHのポート番号を変更する(デフォルトは22)
+
+		1.sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.old
+
+			バックアップを取っておく
+
+		2.$ sudo nano /etc/ssh/sshd_config
+
+			最後の行に下記を追加する
+
+			Port 49152〜65535の中から好きに設定
+
+		3.$ sudo /etc/init.d/ssh restart
+			(SSHを再起動、OKが表示されたら完了)
+
+		4.$ sudo reboot
+			(一旦ログアウトする)
+
+		5.$ ssh 新しいユーザー@IPアドレス -p 設定されたポート番号
+			(新しいユーザー、新しいポートでログインできるか確認)
+
+
+	6.SSHでrootユーザーで直接ログインできなくする
+
+		1.$ sudo nano /etc/ssh/sshd_config
+
+			# Authentication:の下部にある
+
+			#PermiRootLogin yes とあれば、
+			
+			PermitRootLogin no に変更
+
+			※ PermitRootLogin without-password　とあれば、
+			パスワードを使用したrootユーザーのログインを拒否するので、
+			そのままでも良い。
+		
+		2.$ sudo /etc/init.d/ssh restart
+                        (SSHを再起動、OKが表示されたら完了)
+
+		3.exit
+			(一旦ログアウト)
+
+		4.$ ssh root@IPアドレス -p ポート番号
+			(rootでログインできるか確認、ログインできなければOK)
+
+

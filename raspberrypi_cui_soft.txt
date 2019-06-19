@@ -1,0 +1,31 @@
+・gitのインストール
+
+	1.$ sudo apt -y install git
+
+	2.$ git config --global user.name "名前"
+
+	3.$ git config --global user.email "メールアドレス"
+
+	4.$ git config --global core.quotepath off
+		(日本語を含んだファイル名を正しく表示されるようにする)
+
+・sambaのインストール
+
+	1.$ sudo apt -y install samba
+
+	2.sudo nano /etc/samba/samba.conf
+
+		ファイルの最後に追加
+
+			[共有ディレクトリ名]
+			path = /media/ユーザー名/共有ディレクトリ
+			read only = No
+			guest ok = Yes
+			force user = ユーザー名
+
+	3.$sudo service samba restart
+
+		上記でエラーが出る場合は、
+
+		$ sudo service smbd restart
+		$ sudo service nmbd restart
