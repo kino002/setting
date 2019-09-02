@@ -158,7 +158,7 @@
 
 
 	6.SSHでrootユーザーで直接ログインできなくする
-
+	
 		1.$ sudo nano /etc/ssh/sshd_config
 
 			# Authentication:の下部にある
@@ -179,5 +179,47 @@
 
 		4.$ ssh root@IPアドレス -p ポート番号
 			(rootでログインできるか確認、ログインできなければOK)
+
+
+	7.公開キーでログインできるようにする
+
+		1.クライアントPCでキーペアを作成
+
+			1.$ ssh-keygen
+
+			2.そのままEnterキー
+
+			3.パスフレーズ入力	※ 未入力だと「パスフレーズなし」になる
+
+			4.もう一度パスフレーズ入力
+
+			※ /home/[ユーザ名]/.ssh/ の下に
+
+				秘密鍵: id_rsa
+
+				公開鍵: id_rsa.pub
+
+			が作成される。
+
+		2.リモートで公開鍵を登録　（リモートの~/.ssh/authorized-keys　に登録）
+
+			1.sshでログインできる場合
+
+				1.$ ssh-copy-id -i ~/.ssh/id_rsa.pub サーバー側ユーザ名@IPアドレス -p ポート番号
+
+				2. サーバー側ユーザのパスワード入力
+
+			2.sshでログインできない場合
+
+				1.USB等で、　/home/[ユーザ名]/.ssh/id_rsa.pub をコピー
+
+				2.サーバーに id_rsa.pub をコピー後
+
+					$ ssh-copy-id id_rsa.pub
+
+		3.クライアントPCから公開鍵認証でリモートにSSH接続できるか確認
+
+			$ ssh -i id_rsa サーバー側ユーザ名@IPアドレス -p ポート番号
+
 
 
