@@ -13,7 +13,7 @@
 
 	1.$ sudo apt -y install samba
 
-	2.sudo nano /etc/samba/samba.conf
+	2.sudo nano /etc/samba/smb.conf
 
 		ファイルの最後に追加
 
