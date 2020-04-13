@@ -41,7 +41,7 @@
 
 				ファイルの960行目をコメント外して、
 
-					date.timezone = "Asis/Tokyo"
+					date.timezone = "Asia/Tokyo"
 
 				書き換え
 
